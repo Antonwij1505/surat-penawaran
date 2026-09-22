@@ -102,6 +102,26 @@ class CustomerPO(models.Model):
     @api.onchange("partner_id")
     def _onchange_partner_id(self):
         if self.partner_id:
+            contact = self.partner_id.child_ids.filtered(lambda c: c.type == "contact")[:1]
+            if contact and contact.name and contact.name != self.partner_id.name:
+                self.signer_name = contact.name
+                self.signer_job = contact.function or ""
+                self.signer_email = contact.email or self.partner_id.email or ""
+                self.signer_mobile = contact.mobile or contact.phone or self.partner_id.mobile or self.partner_id.phone or ""
+            elif self.opportunity_id:
+                info = self.opportunity_id._get_default_pic_info(self.partner_id)
+                self.signer_name = info.get("name") or ""
+                self.signer_job = info.get("position") or ""
+                self.signer_email = info.get("email") or ""
+                self.signer_mobile = info.get("phone") or ""
+            else:
+                if not self.partner_id.is_company:
+                    self.signer_name = self.partner_id.name
+                    self.signer_job = self.partner_id.function or ""
+                elif self.signer_name == self.partner_id.name:
+                    self.signer_name = ""
+                    self.signer_job = ""
+
             self.instansi_name = self.partner_id.name
             address_parts = [
                 self.partner_id.street,
@@ -113,6 +133,60 @@ class CustomerPO(models.Model):
             self.instansi_address = ", ".join([p for p in address_parts if p])
             self.instansi_phone = self.partner_id.phone or self.partner_id.mobile or ""
             self.place = self.partner_id.city or (self.partner_id.state_id.name if self.partner_id.state_id else "")
+
+    def _sync_signer_to_crm_and_partner(self):
+        """Otomatis memperbarui data kontak pada CRM Lead dan Res Partner saat Form PO diisi/diedit."""
+        for rec in self:
+            # 1. Sync ke CRM Lead
+            if rec.opportunity_id:
+                lead_vals = {}
+                if rec.signer_name and rec.signer_name != rec.opportunity_id.contact_name:
+                    lead_vals["contact_name"] = rec.signer_name
+                if rec.signer_job is not False and rec.signer_job != (rec.opportunity_id.function or ""):
+                    lead_vals["function"] = rec.signer_job or ""
+                if rec.signer_mobile and rec.signer_mobile != rec.opportunity_id.mobile and rec.signer_mobile != rec.opportunity_id.phone:
+                    lead_vals["mobile"] = rec.signer_mobile
+                if rec.signer_email and rec.signer_email != rec.opportunity_id.email_from:
+                    lead_vals["email_from"] = rec.signer_email
+                if lead_vals:
+                    rec.opportunity_id.write(lead_vals)
+
+            # 2. Sync ke Res Partner
+            if rec.partner_id:
+                partner = rec.partner_id
+                if partner.is_company:
+                    child = partner.child_ids.filtered(lambda c: c.name and c.name == rec.signer_name)[:1]
+                    if child:
+                        child_vals = {}
+                        if rec.signer_job is not False and rec.signer_job != (child.function or ""):
+                            child_vals["function"] = rec.signer_job or ""
+                        if rec.signer_mobile and rec.signer_mobile != child.mobile and rec.signer_mobile != child.phone:
+                            child_vals["mobile"] = rec.signer_mobile
+                        if rec.signer_email and rec.signer_email != child.email:
+                            child_vals["email"] = rec.signer_email
+                        if child_vals:
+                            child.write(child_vals)
+                    elif rec.signer_name and rec.signer_name != partner.name:
+                        self.env["res.partner"].create({
+                            "parent_id": partner.id,
+                            "type": "contact",
+                            "name": rec.signer_name,
+                            "function": rec.signer_job or "",
+                            "mobile": rec.signer_mobile or False,
+                            "email": rec.signer_email or False,
+                        })
+                else:
+                    partner_vals = {}
+                    if rec.signer_name and rec.signer_name != partner.name:
+                        partner_vals["name"] = rec.signer_name
+                    if rec.signer_job is not False and rec.signer_job != (partner.function or ""):
+                        partner_vals["function"] = rec.signer_job or ""
+                    if rec.signer_mobile and rec.signer_mobile != partner.mobile and rec.signer_mobile != partner.phone:
+                        partner_vals["mobile"] = rec.signer_mobile
+                    if rec.signer_email and rec.signer_email != partner.email:
+                        partner_vals["email"] = rec.signer_email
+                    if partner_vals:
+                        partner.write(partner_vals)
 
     # Ketentuan & Syarat
     payment_term_desc = fields.Char(
@@ -298,7 +372,15 @@ class CustomerPO(models.Model):
             vals["name"] = self.env["ir.sequence"].next_by_code("customer.po") or "New"
         rec = super(CustomerPO, self).create(vals)
         rec._trigger_crm_p1()
+        rec._sync_signer_to_crm_and_partner()
         return rec
+
+    def write(self, vals):
+        res = super(CustomerPO, self).write(vals)
+        signer_fields = {"signer_name", "signer_job", "signer_mobile", "signer_email", "partner_id", "opportunity_id"}
+        if any(f in vals for f in signer_fields):
+            self._sync_signer_to_crm_and_partner()
+        return res
 
     def action_print(self):
         self.ensure_one()

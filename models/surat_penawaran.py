@@ -97,7 +97,7 @@ class SuratPenawaran(models.Model):
     pic_phone = fields.Char(string="No. HP PIC", tracking=True)
     notes = fields.Text(
         string="Catatan / Syarat & Ketentuan",
-        default="1. Harga sudah termasuk PPN (jika ada).\n2. Pembayaran ditransfer ke rekening resmi perusahaan.\n3. Masa berlaku penawaran sesuai dengan tanggal yang tertera.",
+        default="1. Harga sudah termasuk pajak dan biaya kirim.\n2. Pembayaran ditransfer ke rekening resmi perusahaan.\n3. Masa berlaku penawaran sesuai dengan tanggal yang tertera.",
     )
     line_ids = fields.One2many(
         "surat.penawaran.line",
@@ -142,12 +142,24 @@ class SuratPenawaran(models.Model):
     def _onchange_partner_id(self):
         if self.partner_id:
             contact = self.partner_id.child_ids.filtered(lambda c: c.type == "contact")[:1]
-            target = contact or self.partner_id
-
-            self.pic_name = target.name or self.partner_id.name or ""
-            self.pic_position = target.function or ""
-            self.pic_email = target.email or self.partner_id.email or ""
-            self.pic_phone = target.mobile or target.phone or self.partner_id.mobile or self.partner_id.phone or ""
+            if contact and contact.name and contact.name != self.partner_id.name:
+                self.pic_name = contact.name
+                self.pic_position = contact.function or ""
+                self.pic_email = contact.email or self.partner_id.email or ""
+                self.pic_phone = contact.mobile or contact.phone or self.partner_id.mobile or self.partner_id.phone or ""
+            elif self.opportunity_id:
+                info = self.opportunity_id._get_default_pic_info(self.partner_id)
+                self.pic_name = info.get("name") or ""
+                self.pic_position = info.get("position") or ""
+                self.pic_email = info.get("email") or ""
+                self.pic_phone = info.get("phone") or ""
+            else:
+                if not self.partner_id.is_company:
+                    self.pic_name = self.partner_id.name
+                    self.pic_position = self.partner_id.function or ""
+                elif self.pic_name == self.partner_id.name:
+                    self.pic_name = ""
+                    self.pic_position = ""
 
     @api.depends("line_ids.price_subtotal", "line_ids.price_tax")
     def _compute_amounts(self):
@@ -155,6 +167,60 @@ class SuratPenawaran(models.Model):
             rec.amount_untaxed = sum(rec.line_ids.mapped("price_subtotal"))
             rec.amount_tax = sum(rec.line_ids.mapped("price_tax"))
             rec.amount_total = rec.amount_untaxed + rec.amount_tax
+
+    def _sync_pic_to_crm_and_partner(self):
+        """Otomatis memperbarui data kontak pada CRM Lead dan Res Partner saat Surat Penawaran diisi/diedit."""
+        for rec in self:
+            # 1. Sync ke CRM Lead
+            if rec.opportunity_id:
+                lead_vals = {}
+                if rec.pic_name and rec.pic_name != rec.opportunity_id.contact_name:
+                    lead_vals["contact_name"] = rec.pic_name
+                if rec.pic_position is not False and rec.pic_position != (rec.opportunity_id.function or ""):
+                    lead_vals["function"] = rec.pic_position or ""
+                if rec.pic_phone and rec.pic_phone != rec.opportunity_id.mobile and rec.pic_phone != rec.opportunity_id.phone:
+                    lead_vals["mobile"] = rec.pic_phone
+                if rec.pic_email and rec.pic_email != rec.opportunity_id.email_from:
+                    lead_vals["email_from"] = rec.pic_email
+                if lead_vals:
+                    rec.opportunity_id.write(lead_vals)
+
+            # 2. Sync ke Res Partner
+            if rec.partner_id:
+                partner = rec.partner_id
+                if partner.is_company:
+                    child = partner.child_ids.filtered(lambda c: c.name and c.name == rec.pic_name)[:1]
+                    if child:
+                        child_vals = {}
+                        if rec.pic_position is not False and rec.pic_position != (child.function or ""):
+                            child_vals["function"] = rec.pic_position or ""
+                        if rec.pic_phone and rec.pic_phone != child.mobile and rec.pic_phone != child.phone:
+                            child_vals["mobile"] = rec.pic_phone
+                        if rec.pic_email and rec.pic_email != child.email:
+                            child_vals["email"] = rec.pic_email
+                        if child_vals:
+                            child.write(child_vals)
+                    elif rec.pic_name and rec.pic_name != partner.name:
+                        self.env["res.partner"].create({
+                            "parent_id": partner.id,
+                            "type": "contact",
+                            "name": rec.pic_name,
+                            "function": rec.pic_position or "",
+                            "mobile": rec.pic_phone or False,
+                            "email": rec.pic_email or False,
+                        })
+                else:
+                    partner_vals = {}
+                    if rec.pic_name and rec.pic_name != partner.name:
+                        partner_vals["name"] = rec.pic_name
+                    if rec.pic_position is not False and rec.pic_position != (partner.function or ""):
+                        partner_vals["function"] = rec.pic_position or ""
+                    if rec.pic_phone and rec.pic_phone != partner.mobile and rec.pic_phone != partner.phone:
+                        partner_vals["mobile"] = rec.pic_phone
+                    if rec.pic_email and rec.pic_email != partner.email:
+                        partner_vals["email"] = rec.pic_email
+                    if partner_vals:
+                        partner.write(partner_vals)
 
     def _trigger_crm_p2(self):
         """Otomatis memicu perpindahan lead ke stage P2 (Interest) jika ada penawaran."""
@@ -193,7 +259,15 @@ class SuratPenawaran(models.Model):
         records = super().create(vals_list)
         for rec in records:
             rec._trigger_crm_p2()
+            rec._sync_pic_to_crm_and_partner()
         return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        pic_fields = {"pic_name", "pic_position", "pic_phone", "pic_email", "partner_id", "opportunity_id"}
+        if any(f in vals for f in pic_fields):
+            self._sync_pic_to_crm_and_partner()
+        return res
 
     def unlink(self):
         for rec in self:

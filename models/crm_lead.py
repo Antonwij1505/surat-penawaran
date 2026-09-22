@@ -56,10 +56,45 @@ class CrmLead(models.Model):
                 self.partner_id = partner.id
         return partner
 
+    def _get_default_pic_info(self, partner):
+        """Mendapatkan info PIC dari lead/partner secara presisi."""
+        self.ensure_one()
+        contact_name = (self.contact_name or "").strip()
+        partner_name = (self.partner_name or (partner.name if partner else "") or self.name or "").strip()
+        function_name = (self.function or "").strip()
+
+        # 1. Jika contact_name sama dengan nama instansi/perusahaan
+        if contact_name and (contact_name.lower() == partner_name.lower() or contact_name.lower() == (self.name or "").lower()):
+            # Jika function berisi nama orang, gunakan function sebagai nama PIC
+            if function_name and len(function_name.split()) <= 4 and not any(w in function_name.lower() for w in ['bagian', 'bidang', 'dinas', 'kantor', 'subag', 'staf', 'staff', 'sekretariat', 'seksi', 'pengadaan', 'logistik', 'pbj', 'tu']):
+                pic_name = function_name
+                pic_pos = ""
+            else:
+                pic_name = ""
+                pic_pos = function_name
+        else:
+            pic_name = contact_name
+            if function_name and function_name.lower() == contact_name.lower():
+                pic_pos = ""
+            else:
+                pic_pos = function_name
+
+        # Fallback jika pic_name masih kosong dan partner bukan instansi perusahaan biasa
+        if not pic_name and partner and not partner.is_company and partner.name.lower() != partner_name.lower():
+            pic_name = partner.name
+
+        return {
+            "name": pic_name,
+            "phone": self.mobile or self.phone or (partner.mobile or partner.phone if partner else ""),
+            "email": self.email_from or (partner.email if partner else ""),
+            "position": pic_pos,
+        }
+
     def action_create_surat_penawaran(self):
         """Tombol aksi langsung membuat Surat Penawaran dengan data otomatis dari Lead."""
         self.ensure_one()
         partner = self._ensure_lead_partner()
+        pic_info = self._get_default_pic_info(partner)
         today = fields.Date.context_today(self)
         validity = today + timedelta(days=30)
         return {
@@ -74,10 +109,10 @@ class CrmLead(models.Model):
                 "default_user_id": self.env.user.id,
                 "default_date_order": today,
                 "default_validity_date": validity,
-                "default_pic_name": self.contact_name or (partner.name if partner else ""),
-                "default_pic_phone": self.mobile or self.phone or "",
-                "default_pic_email": self.email_from or "",
-                "default_pic_position": self.function or "",
+                "default_pic_name": pic_info["name"],
+                "default_pic_phone": pic_info["phone"],
+                "default_pic_email": pic_info["email"],
+                "default_pic_position": pic_info["position"],
             },
         }
 
@@ -85,6 +120,7 @@ class CrmLead(models.Model):
         """Tombol aksi langsung membuat Form PO Customer dengan data otomatis dari Lead."""
         self.ensure_one()
         partner = self._ensure_lead_partner()
+        pic_info = self._get_default_pic_info(partner)
         return {
             "name": "Buat Form Purchase Order (PO)",
             "type": "ir.actions.act_window",
@@ -95,41 +131,43 @@ class CrmLead(models.Model):
                 "default_opportunity_id": self.id,
                 "default_partner_id": partner.id if partner else False,
                 "default_salesperson_id": self.env.user.id,
-                "default_signer_name": self.contact_name or (partner.name if partner else ""),
-                "default_signer_mobile": self.mobile or self.phone or "",
-                "default_signer_email": self.email_from or "",
-                "default_signer_job": self.function or "",
+                "default_signer_name": pic_info["name"],
+                "default_signer_mobile": pic_info["phone"],
+                "default_signer_email": pic_info["email"],
+                "default_signer_job": pic_info["position"],
             },
         }
 
     def action_view_surat_penawaran(self):
         self.ensure_one()
         partner = self._ensure_lead_partner()
+        pic_info = self._get_default_pic_info(partner)
         action = self.env["ir.actions.actions"]._for_xml_id("agi_surat_penawaran.action_surat_penawaran")
         action["domain"] = [("opportunity_id", "=", self.id)]
         action["context"] = {
             "default_opportunity_id": self.id,
             "default_partner_id": partner.id if partner else False,
             "default_user_id": self.env.user.id,
-            "default_pic_name": self.contact_name or (partner.name if partner else ""),
-            "default_pic_phone": self.mobile or self.phone or "",
-            "default_pic_email": self.email_from or "",
-            "default_pic_position": self.function or "",
+            "default_pic_name": pic_info["name"],
+            "default_pic_phone": pic_info["phone"],
+            "default_pic_email": pic_info["email"],
+            "default_pic_position": pic_info["position"],
         }
         return action
 
     def action_view_customer_po(self):
         self.ensure_one()
         partner = self._ensure_lead_partner()
+        pic_info = self._get_default_pic_info(partner)
         action = self.env["ir.actions.actions"]._for_xml_id("agi_surat_penawaran.action_customer_po")
         action["domain"] = [("opportunity_id", "=", self.id)]
         action["context"] = {
             "default_opportunity_id": self.id,
             "default_partner_id": partner.id if partner else False,
             "default_salesperson_id": self.env.user.id,
-            "default_signer_name": self.contact_name or (partner.name if partner else ""),
-            "default_signer_mobile": self.mobile or self.phone or "",
-            "default_signer_email": self.email_from or "",
-            "default_signer_job": self.function or "",
+            "default_signer_name": pic_info["name"],
+            "default_signer_mobile": pic_info["phone"],
+            "default_signer_email": pic_info["email"],
+            "default_signer_job": pic_info["position"],
         }
         return action
