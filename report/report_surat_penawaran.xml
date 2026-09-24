@@ -83,10 +83,10 @@
                                         <span t-field="doc.partner_id.street"/><br t-if="doc.partner_id.street2"/>
                                         <span t-field="doc.partner_id.street2" t-if="doc.partner_id.street2"/>
                                     </div>
-                                     <div class="mt-1" style="font-size: 11px;">
+                                     <div class="mt-1" style="font-size: 11px;" t-if="doc.pic_name and doc.pic_name != doc.partner_id.name">
                                          <span class="fw-bold">Up: </span>
-                                         <span t-esc="doc.pic_name or (doc.partner_id.child_ids and doc.partner_id.child_ids[0].name) or doc.partner_id.name"/>
-                                         <t t-set="contact_pos" t-value="doc.pic_position or (doc.partner_id.child_ids and doc.partner_id.child_ids[0].function) or ''"/>
+                                         <span t-esc="doc.pic_name"/>
+                                         <t t-set="contact_pos" t-value="doc.pic_position or ''"/>
                                          <span t-if="contact_pos"> (<t t-esc="contact_pos"/>)</span>
                                      </div>
                                      <div style="font-size: 11px;" class="text-muted">
