@@ -313,9 +313,10 @@ class SuratPenawaran(models.Model):
                         'Content-Type': 'application/json',
                         'Authorization': f"Bearer {api_key}"
                     }
+                    comp_name = "PT. AGI Solusi Negeri" if self.company_entity == "solusi_negeri" else "PT. Aston Graphindo Indonesia"
                     prompt = (
                         f"Buatkan 1-2 kalimat salam pembuka dan pengantar yang sangat sopan, ramah, dan profesional dalam Bahasa Indonesia "
-                        f"dari Sales '{self.user_id.name}' (PT. Aston Graphindo Indonesia) untuk customer '{self.pic_name}' di instansi '{self.partner_id.name}'. "
+                        f"dari Sales '{self.user_id.name}' ({comp_name}) untuk customer '{self.pic_name}' di instansi '{self.partner_id.name}'. "
                         f"Tujuan: menyampaikan dokumen resmi {doc_type} nomor {self.name}. "
                         f"Hanya kembalikan teks salam pengantar saja (tanpa tanda kutip, tanpa penjelasan)."
                     )
@@ -353,7 +354,7 @@ class SuratPenawaran(models.Model):
             f"Bersama ini kami sampaikan dokumen *Surat Penawaran Harga* resmi:\n"
             f"• Nomor Surat: *{self.name}*\n"
             f"• Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*\n"
-            f"• Masa Berlaku: *s/d {self.validity_date or '-'}-{comp_name}*\n\n"
+            f"• Masa Berlaku: *s/d {self.validity_date or '-'}*\n\n"
             f"Dokumen Surat Penawaran resmi PDF terlampir. Apabila ada hal yang perlu didiskusikan atau disesuaikan, kami siap membantu.\n\n"
             f"Hormat kami,\n*{self.user_id.name}*\n{comp_name}"
         )
@@ -421,7 +422,7 @@ class SuratPenawaran(models.Model):
         mail_values = {
             'subject': subject,
             'body_html': body_html,
-            'email_from': f"PT. Aston Graphindo Indonesia <{company_email}>",
+            'email_from': f"{comp_name} <{company_email}>",
             'email_to': email_to,
             'reply_to': company_email,
             'attachment_ids': [(4, attachment.id)],

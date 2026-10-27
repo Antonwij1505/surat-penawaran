@@ -45,7 +45,7 @@
                             <field name="signer_mobile" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="signer_email" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                         </group>
-                        <group string="Penerima &amp; Pengesah Pesanan (PT. Aston Graphindo Indonesia)">
+                        <group string="Penerima &amp; Pengesah Pesanan">
                             <field name="salesperson_id" widget="many2one_avatar_user" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="salesperson_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>
                             <field name="approver_name" attrs="{'readonly': [('state', '=', 'confirmed')]}"/>

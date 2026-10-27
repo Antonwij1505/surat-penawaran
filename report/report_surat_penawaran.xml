@@ -212,9 +212,13 @@
                         <div class="row text-center mt-4" style="page-break-inside: avoid; font-size: 12px;">
                             <div class="col-12 text-end" style="padding-right: 60px;">
                                 <p class="mb-1 text-muted">Hormat kami,</p>
-                                <p class="fw-bold mb-1">PT. Aston Graphindo Indonesia</p>
+                                <p class="fw-bold mb-1">
+                                    <t t-if="doc.company_entity == 'solusi_negeri'">PT. AGI Solusi Negeri</t>
+                                    <t t-else="">PT. Aston Graphindo Indonesia</t>
+                                </p>
                                 <div class="my-2">
-                                    <t t-set="qr_data" t-value="'Surat Penawaran Sah - PT Aston Graphindo Indonesia. No: %s, Sales: %s, Tanggal: %s' % (doc.name or '', doc.user_id.name or '', doc.date_order or '')"/>
+                                    <t t-set="comp_sign_name" t-value="'PT. AGI Solusi Negeri' if doc.company_entity == 'solusi_negeri' else 'PT. Aston Graphindo Indonesia'"/>
+                                    <t t-set="qr_data" t-value="'Surat Penawaran Sah - %s. No: %s, Sales: %s, Tanggal: %s' % (comp_sign_name, doc.name or '', doc.user_id.name or '', doc.date_order or '')"/>
                                     <img t-att-src="'/report/barcode/?barcode_type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', quote_plus(qr_data), 120, 120)" style="max-height: 90px; width: auto;" alt="Tanda Tangan QR"/>
                                 </div>
                                 <p class="mb-0 fw-bold"><u>( <span t-field="doc.user_id.name"/> )</u></p>

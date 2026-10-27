@@ -5,7 +5,7 @@
     "summary": "Generator Surat Penawaran dan Form Purchase Order (PO) Customer",
     "author": "AGI",
     "license": "LGPL-3",
-    "depends": ["base", "sale", "product", "contacts", "account", "mail"],
+    "depends": ["base", "sale", "product", "contacts", "account", "mail", "crm"],
     "data": [
         "security/ir.model.access.csv",
         "data/surat_penawaran_data.xml",

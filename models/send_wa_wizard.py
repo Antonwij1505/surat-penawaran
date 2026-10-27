@@ -66,11 +66,12 @@ class SendWaWizard(models.TransientModel):
                         )
                         pdf_content, _ = self.env['ir.actions.report']._render_qweb_pdf(report_xml_id, [doc.id])
                         send_media_url = f"{evo_url.rstrip('/')}/message/sendMedia/{inst.instance_name}"
+                        comp_name = "PT. AGI Solusi Negeri" if getattr(doc, 'company_entity', False) == 'solusi_negeri' else "PT. Aston Graphindo Indonesia"
                         media_data = {
                             'number': clean_phone,
                             'mediatype': 'document',
                             'mimetype': 'application/pdf',
-                            'caption': f"{doc.name} - PT. Aston Graphindo Indonesia",
+                            'caption': f"{doc.name} - {comp_name}",
                             'media': base64.b64encode(pdf_content).decode('utf-8'),
                             'fileName': f"{doc.name.replace('/', '_')}.pdf"
                         }

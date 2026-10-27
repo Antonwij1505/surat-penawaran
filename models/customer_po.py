@@ -219,7 +219,7 @@ class CustomerPO(models.Model):
     )
     salesperson_name = fields.Char(string="Nama Salesman")
     approver_name = fields.Char(
-        string="Pesanan Disetujui Oleh (PT. Aston Graphindo Indonesia)",
+        string="Pesanan Disetujui Oleh (Vendor)",
         default="Febriyan Adi Garuda Sakti",
     )
 
@@ -400,9 +400,10 @@ class CustomerPO(models.Model):
                 if api_key and base_url:
                     endpoint = base_url.rstrip('/') + '/chat/completions'
                     headers = {'Content-Type': 'application/json', 'Authorization': f"Bearer {api_key}"}
+                    comp_name = "PT. AGI Solusi Negeri" if self.company_entity == "solusi_negeri" else "PT. Aston Graphindo Indonesia"
                     prompt = (
                         f"Buatkan 1 kalimat salam pembuka dan pengantar yang sangat sopan, ramah, dan profesional dalam Bahasa Indonesia "
-                        f"dari Sales '{self.salesperson_id.name}' (PT. Aston Graphindo Indonesia) untuk pemesan '{self.signer_name}' di instansi '{self.partner_id.name}'. "
+                        f"dari Sales '{self.salesperson_id.name}' ({comp_name}) untuk pemesan '{self.signer_name}' di instansi '{self.partner_id.name}'. "
                         f"Tujuan: menyampaikan dokumen resmi Form Purchase Order (PO) nomor {self.name or 'Draft'}. "
                         f"Hanya kembalikan kalimat salam pengantar saja (tanpa tanda kutip, tanpa penjelasan)."
                     )
@@ -426,6 +427,7 @@ class CustomerPO(models.Model):
         po_num = self.name or "(Draft PO)"
         ai_greeting = self._generate_ai_po_greeting()
 
+        comp_name = "PT. AGI Solusi Negeri" if self.company_entity == "solusi_negeri" else "PT. Aston Graphindo Indonesia"
         pesan = (
             f"Yth. Bapak/Ibu *{self.signer_name or 'Pemesan'}* - *{self.partner_id.name}*,\n\n"
             f"{ai_greeting}\n\n"
@@ -433,7 +435,7 @@ class CustomerPO(models.Model):
             f"• Nomor PO: *{po_num}*\n"
             f"• Total Nilai: *{self.currency_id.symbol or 'Rp'} {self.amount_total:,.2f}*\n\n"
             f"Dokumen Purchase Order PDF terlampir. Mohon untuk dicek dan dikonfirmasi kembali. Terima kasih atas kerja samanya.\n\n"
-            f"Hormat kami,\n*{self.salesperson_id.name}*\nPT. Aston Graphindo Indonesia"
+            f"Hormat kami,\n*{self.salesperson_id.name}*\n{comp_name}"
         )
 
         return {
@@ -478,7 +480,7 @@ class CustomerPO(models.Model):
             <br/>
             <p>Hormat kami,</p>
             <p><strong>{self.salesperson_id.name}</strong><br/>
-            PT. Aston Graphindo Indonesia<br/>
+            {comp_name}<br/>
             Email: {company_email}</p>
         """
 
@@ -498,7 +500,7 @@ class CustomerPO(models.Model):
         mail_values = {
             'subject': subject,
             'body_html': body_html,
-            'email_from': f"PT. Aston Graphindo Indonesia <{company_email}>",
+            'email_from': f"{comp_name} <{company_email}>",
             'email_to': email_to,
             'reply_to': company_email,
             'attachment_ids': [(4, attachment.id)],

@@ -281,13 +281,19 @@
                             </div>
                             <div class="col-4 text-center">
                                 <div>Pesanan Diterima Oleh,</div>
-                                <div>Salesman <span t-field="doc.company_id.name"/></div>
+                                <div>Salesman 
+                                    <t t-if="doc.company_entity == 'solusi_negeri'">PT. AGI Solusi Negeri</t>
+                                    <t t-else="">PT. Aston Graphindo Indonesia</t>
+                                </div>
                                 <div style="height: 45px;"></div>
                                 <div class="fw-bold"><span t-field="doc.salesperson_name"/></div>
                             </div>
                             <div class="col-4 text-center">
                                 <div>Pesanan Disetujui Oleh,</div>
-                                <div><span t-field="doc.company_id.name"/></div>
+                                <div>
+                                    <t t-if="doc.company_entity == 'solusi_negeri'">PT. AGI Solusi Negeri</t>
+                                    <t t-else="">PT. Aston Graphindo Indonesia</t>
+                                </div>
                                 <div style="height: 45px;"></div>
                                 <div class="fw-bold"><span t-field="doc.approver_name"/></div>
                             </div>
