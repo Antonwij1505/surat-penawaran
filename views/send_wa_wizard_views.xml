@@ -4,10 +4,10 @@
         <field name="name">send.wa.wizard.form</field>
         <field name="model">send.wa.wizard</field>
         <field name="arch" type="xml">
-            <form string="Pratinjau Pesan WhatsApp">
+            <form string="Kirim WhatsApp (Click to Chat)">
                 <sheet>
-                    <div class="alert alert-info py-2 mb-3" role="alert">
-                        <strong>💡 Preview Pesan:</strong> Anda dapat memeriksa dan mengedit kalimat pesan WhatsApp di bawah ini sebelum dikirimkan ke customer.
+                    <div class="alert alert-success py-2 mb-3" role="alert">
+                        <strong>🔒 Aman &amp; Resmi (Click to Chat):</strong> Pesan akan langsung dibuka di <strong>WhatsApp Web / Aplikasi WhatsApp</strong> nomor Anda sendiri secara resmi via <code>wa.me</code> (100% aman tanpa risiko banned). Anda dapat memeriksa/mengedit teks pesan di bawah sebelum dikirim.
                     </div>
                     <div class="row">
                         <div class="col-6">
@@ -22,7 +22,6 @@
                             <group string="Kontak Penerima" class="mb-0">
                                 <field name="recipient_name" string="Nama PIC"/>
                                 <field name="recipient_phone" string="No. WhatsApp / HP"/>
-                                <field name="attach_pdf" widget="boolean_toggle"/>
                             </group>
                         </div>
                     </div>
@@ -32,7 +31,8 @@
                     </div>
                 </sheet>
                 <footer>
-                    <button name="action_confirm_send" string="🚀 Kirim Sekarang" type="object" class="btn-success" icon="fa-paper-plane"/>
+                    <button name="action_confirm_send" string="💬 Buka WhatsApp (Click to Chat)" type="object" class="btn-success" icon="fa-whatsapp"/>
+                    <button name="action_download_pdf" string="📥 Download PDF Dokumen" type="object" class="btn-outline-primary" icon="fa-download"/>
                     <button string="Batal" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>

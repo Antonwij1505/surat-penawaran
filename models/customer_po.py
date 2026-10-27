@@ -452,7 +452,6 @@ class CustomerPO(models.Model):
                 "default_recipient_name": self.signer_name or (self.partner_id.name if self.partner_id else ""),
                 "default_recipient_phone": phone,
                 "default_message": pesan,
-                "default_attach_pdf": True,
             },
         }
 
