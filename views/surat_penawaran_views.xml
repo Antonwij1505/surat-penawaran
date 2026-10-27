@@ -81,8 +81,9 @@
                             </field>
 
                             <group name="note_group" col="6" class="mt-2 mt-md-0">
-                                <group colspan="4">
-                                    <field name="notes" placeholder="Catatan atau Syarat &amp; Ketentuan tambahan..." nolabel="1"/>
+                                <group colspan="4" string="Catatan / Syarat &amp; Ketentuan">
+                                    <field name="notes" string="Poin 1, 2, 3 (Standar)" attrs="{'readonly': [('state', 'in', ('accepted', 'refused'))]}" class="text-muted mb-2"/>
+                                    <field name="notes_extra" string="Catatan Tambahan (Poin 4)" placeholder="Ketik keterangan tambahan untuk poin ke-4 di sini (contoh: Garansi produk 1 tahun, Franco gudang pembeli, dll)..." attrs="{'readonly': [('state', 'in', ('accepted', 'refused'))]}"/>
                                 </group>
                                 <group class="oe_subtotal_footer oe_right" colspan="2" name="surat_penawaran_total">
                                     <field name="amount_untaxed" widget="monetary" options="{'currency_field': 'currency_id'}"/>

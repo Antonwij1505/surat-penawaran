@@ -96,9 +96,31 @@ class SuratPenawaran(models.Model):
     pic_email = fields.Char(string="Email PIC", tracking=True)
     pic_phone = fields.Char(string="No. HP PIC", tracking=True)
     notes = fields.Text(
-        string="Catatan / Syarat & Ketentuan",
+        string="Syarat & Ketentuan (Poin 1-3)",
         default="1. Harga sudah termasuk pajak dan biaya kirim.\n2. Pembayaran ditransfer ke rekening resmi perusahaan.\n3. Masa berlaku penawaran sesuai dengan tanggal yang tertera.",
+        tracking=True,
     )
+    notes_extra = fields.Text(
+        string="Catatan Tambahan (Poin 4)",
+        tracking=True,
+        help="Keterangan tambahan untuk dicetak sebagai poin ke-4 pada Syarat & Ketentuan.",
+    )
+    formatted_notes_extra = fields.Text(
+        string="Formatted Notes Extra",
+        compute="_compute_formatted_notes_extra",
+    )
+
+    @api.depends("notes_extra")
+    def _compute_formatted_notes_extra(self):
+        for rec in self:
+            if not rec.notes_extra:
+                rec.formatted_notes_extra = ""
+            else:
+                text = rec.notes_extra.strip()
+                if text.startswith("4.") or text.startswith("4 "):
+                    rec.formatted_notes_extra = text
+                else:
+                    rec.formatted_notes_extra = f"4. {text}" 
     line_ids = fields.One2many(
         "surat.penawaran.line",
         "surat_id",
@@ -480,6 +502,7 @@ class SuratPenawaran(models.Model):
             'signer_job': self.pic_position or "",
             'signer_mobile': self.pic_phone or "",
             'signer_email': self.pic_email or "",
+            'notes_other': self.notes_extra or "",
             'line_ids': po_lines,
         }
         po = self.env['customer.po'].create(vals)

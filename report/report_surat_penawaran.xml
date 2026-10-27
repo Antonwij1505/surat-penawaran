@@ -170,10 +170,12 @@
                         <!-- Summary & Notes -->
                         <div class="row mb-4">
                             <div class="col-7">
-                                <t t-if="doc.notes">
+                                <t t-if="doc.notes or doc.notes_extra">
                                     <div class="card p-2 bg-light border" style="font-size: 11px;">
                                         <span class="fw-bold mb-1">Catatan / Syarat &amp; Ketentuan:</span>
-                                        <div style="white-space: pre-wrap;"><span t-field="doc.notes"/></div>
+                                        <div style="white-space: pre-wrap;"><t t-if="doc.notes"><span t-field="doc.notes"/></t><t t-else="">1. Harga sudah termasuk pajak dan biaya kirim.
+2. Pembayaran ditransfer ke rekening resmi perusahaan.
+3. Masa berlaku penawaran sesuai dengan tanggal yang tertera.</t><t t-if="doc.formatted_notes_extra"><br/><span t-field="doc.formatted_notes_extra"/></t></div>
                                     </div>
                                 </t>
                             </div>
