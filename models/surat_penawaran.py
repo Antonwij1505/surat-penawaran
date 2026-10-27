@@ -457,3 +457,37 @@ class SuratPenawaran(models.Model):
             if rec.validity_date and rec.date_order and rec.validity_date < rec.date_order:
                 raise ValidationError("Tanggal 'Berlaku Sampai' tidak boleh lebih awal dari Tanggal Surat.")
 
+
+    def action_create_customer_po(self):
+        """Buat Form PO Customer secara otomatis dari data Surat Penawaran ini."""
+        self.ensure_one()
+        po_lines = []
+        for line in self.line_ids:
+            po_lines.append((0, 0, {
+                'sequence': line.sequence,
+                'product_id': line.product_id.id if line.product_id else False,
+                'name': line.name,
+                'price_unit': line.unit_price,
+                'product_qty': line.product_uom_qty,
+            }))
+
+        vals = {
+            'opportunity_id': self.opportunity_id.id if self.opportunity_id else False,
+            'partner_id': self.partner_id.id,
+            'company_entity': self.company_entity,
+            'salesperson_id': self.user_id.id if self.user_id else self.env.user.id,
+            'signer_name': self.pic_name or (self.partner_id.name if self.partner_id else "PIC"),
+            'signer_job': self.pic_position or "",
+            'signer_mobile': self.pic_phone or "",
+            'signer_email': self.pic_email or "",
+            'line_ids': po_lines,
+        }
+        po = self.env['customer.po'].create(vals)
+        return {
+            'name': 'Form PO Customer',
+            'type': 'ir.actions.act_window',
+            'res_model': 'customer.po',
+            'view_mode': 'form',
+            'res_id': po.id,
+            'target': 'current',
+        }

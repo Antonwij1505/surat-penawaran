@@ -10,6 +10,7 @@
                     <button name="action_send_whatsapp" type="object" string="💬 Kirim WA" class="btn-success" icon="fa-whatsapp"/>
                     <button name="action_send_email" type="object" string="✉️ Kirim Email" class="btn-primary" icon="fa-envelope"/>
                     <button name="action_print" type="object" string="Cetak PDF" class="btn-secondary" icon="fa-print"/>
+                    <button name="action_create_customer_po" type="object" string="🛒 Buat Form PO" class="btn-outline-primary" icon="fa-shopping-cart"/>
                     <button name="action_send" type="object" string="Tandai Terkirim" class="btn-secondary" attrs="{'invisible': [('state', '!=', 'draft')]}"/>
                     <button name="action_accept" type="object" string="Diterima" class="btn-success" attrs="{'invisible': [('state', '!=', 'sent')]}"/>
                     <button name="action_refuse" type="object" string="Ditolak" class="btn-danger" attrs="{'invisible': [('state', '!=', 'sent')]}"/>

@@ -158,7 +158,14 @@
         </field>
     </record>
 
-    <!-- Menuitem -->
+    <!-- Menuitem under Surat Penawaran -->
+    <menuitem id="menu_customer_po_under_sp"
+              name="Form PO Customer"
+              parent="menu_surat_penawaran_root"
+              action="action_customer_po"
+              sequence="20"/>
+
+    <!-- Menuitem under Sales module -->
     <menuitem id="menu_customer_po"
               name="Form PO Customer"
               parent="sale.sale_order_menu"
