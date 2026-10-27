@@ -514,3 +514,27 @@ class SuratPenawaran(models.Model):
             'res_id': po.id,
             'target': 'current',
         }
+
+    def get_clean_terms(self):
+        """Mendapatkan daftar butir syarat & ketentuan yang seragam dan rapi (poin 1 s/d 4)."""
+        self.ensure_one()
+        terms = []
+        raw_notes = self.notes or (
+            "1. Harga sudah termasuk pajak dan biaya kirim.\n"
+            "2. Pembayaran ditransfer ke rekening resmi perusahaan.\n"
+            "3. Masa berlaku penawaran sesuai dengan tanggal yang tertera."
+        )
+        for line in raw_notes.splitlines():
+            line_str = line.strip()
+            if line_str:
+                terms.append(line_str)
+
+        if self.notes_extra:
+            for extra_line in self.notes_extra.strip().splitlines():
+                extra_str = extra_line.strip()
+                if extra_str:
+                    if not (extra_str.startswith("4.") or extra_str.startswith("4 ")):
+                        extra_str = f"4. {extra_str}"
+                    terms.append(extra_str)
+
+        return terms
